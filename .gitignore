@@ -1,0 +1,141 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# Output Directories
+outputs/
+*/outputs/
+**/outputs/
+exports/
+*/exports/
+**/exports/
+/exports/
+*.csv
+*.json
+*.xlsx
+*.pdf
+
+# Legacy Modules - Exclude entire folders
+1065/
+1065_Azure/
+1120/
+1120_Azure/
+1120s/
+1120s_Azure/
+
+# IDE - VSCode
+.vscode/
+*.code-workspace
+.history/
+
+# IDE - PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# IDE - Jupyter Notebook
+.ipynb_checkpoints
+
+# IDE - Other
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# Temporary Files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+
+# Documentation Build
+docs/_build/
+site/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
+
+# Project Specific - Sensitive Data
+# Uncomment if you want to exclude sample PDFs
+# 1065/*.pdf
+# 1120/*.pdf
+# 1120s/*.pdf
+# RPA Output Data/
+
+# Keep directory structure but ignore contents
+# Uncomment if you want to keep empty directories
+# !1065/.gitkeep
+# !1120/.gitkeep
+# !1120s/.gitkeep
+*.ipynb
+test.ipynb
+.ipynb
+.gitkeep
+
+

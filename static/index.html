@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Content Security Policy: Allow SheetJS (requires unsafe-eval) and CDN sources -->
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https:; font-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; connect-src 'self' http://localhost:* https://localhost:*; frame-src 'self' blob:;">
+    <title>SS Tax Automation Portal 2026</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/static/css/styles.css?v=5">
+    <link rel="stylesheet" href="/static/css/client_table.css?v=2">
+    <link rel="stylesheet" href="/static/css/status_badges.css?v=1">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .app-layout {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .sidebar {
+            width: 260px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .module-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .module-nav-button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: #333;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .module-nav-button:hover {
+            background-color: #e9ecef;
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: auto;
+            padding: 30px;
+            background-color: #fff;
+        }
+
+        .content-container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .module-nav-button.active {
+            background-color: #1E3A5F;
+            color: #ffffff;
+        }
+
+        /* Drake Skip Preview Switch */
+        .drake-skip-switch {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .drake-skip-switch .form-check-label {
+            font-weight: 500;
+            color: #1E3A5F;
+        }
+
+        /* Switch background when ON */
+        .drake-skip-switch .form-check-input:checked {
+            background-color: #1E3A5F;
+            border-color: #1E3A5F;
+        }
+
+        /* Switch focus */
+        .drake-skip-switch .form-check-input:focus {
+            box-shadow: 0 0 0 0.15rem rgba(30, 58, 95, 0.25);
+        }
+
+        /* Switch knob */
+        .drake-skip-switch .form-check-input {
+            cursor: pointer;
+            background-color: #ffffff;
+            border-color: #adb5bd;
+        }
+
+        /* Collapsible Nav Group */
+        .module-nav-group .module-nav-parent {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .module-nav-group .nav-chevron {
+            transition: transform 0.2s ease-in-out;
+            font-size: 0.8em;
+            pointer-events: auto; /* Make sure chevron is clickable */
+        }
+        .module-nav-group.expanded .nav-chevron {
+            transform: rotate(90deg);
+        }
+        .module-nav-children {
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding-top 0.3s ease-out, padding-bottom 0.3s ease-out;
+            max-height: 0;
+            padding-left: 20px;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+        .module-nav-group.expanded .module-nav-children {
+            max-height: 200px; /* Adjust as needed */
+            padding-top: 5px;
+        }
+        .module-nav-child {
+            background-color: #f0f3f5;
+            font-size: 0.95em;
+        }
+
+        /* Folder Icon Toggle - More robust version */
+        .folder-icon-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1em;
+            height: 1em;
+        }
+        .folder-icon-wrapper .bi {
+            position: absolute;
+            transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
+        .folder-icon-wrapper .icon-open {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        .module-nav-group.expanded .folder-icon-wrapper .icon-closed {
+            opacity: 0;
+        }
+        .module-nav-group.expanded .folder-icon-wrapper .icon-open {
+            opacity: 1;
+            color: #0d6efd;
+        }
+
+        /* Ensure icons are white when the button is active (blue background) */
+        .module-nav-button.active .folder-icon-wrapper i {
+            color: #ffffff !important;
+        }
+
+        /* Karbon Work Status Colors */
+        .karbon-status-accepted {
+            color: #155724; /* Dark green */
+            background-color: #d4edda; /* Light green */
+            font-weight: 500;
+            border-radius: 0.25rem;
+            padding: 0.25em 0.5em;
+        }
+
+        .karbon-status-rejected {
+            color: #721c24; /* Dark red */
+            background-color: #f8d7da; /* Light red */
+            font-weight: 500;
+            border-radius: 0.25rem;
+            padding: 0.25em 0.5em;
+        }
+
+        /* EF Status Badges - Modern Style */
+        .status-badge {
+            padding: 0.35em 0.8em;
+            font-size: 0.85em;
+            font-weight: 600;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            line-height: 1;
+        }
+        .status-queue {
+            color: #59626a;
+            background-color: #f0f2f4;
+            border: 1px solid #dce1e6;
+        }
+        .status-start {
+            color: #084298;
+            background-color: #cfe2ff;
+            border: 1px solid #b6d4fe;
+        }
+        .status-success {
+            color: #0f5132;
+            background-color: #d1e7dd;
+            border: 1px solid #badbcc;
+        }
+        .status-fail {
+            color: #842029;
+            background-color: #f8d7da;
+            border: 1px solid #f5c2c7;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout hidden">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <p style="font-size: 1.2em; font-weight: bold; margin: 0;">Tax Automation Portal</p>
+            </div>
+            <nav class="module-nav" aria-label="Module navigation">
+                <button type="button" class="module-nav-button active" data-module="introductionModule"
+                    aria-pressed="true">
+                    Introduction
+                </button>
+                <!-- <button type="button" class="module-nav-button" data-module="taxAutomationModule" aria-pressed="false">
+                    OCR Final Tax Return
+                </button>
+                <button type="button" class="module-nav-button" data-module="filingInstructionsModule"
+                    aria-pressed="false">
+                    Extract Filing Instructions
+                </button> -->
+                <button type="button" class="module-nav-button" data-module="DrakeAutomationModule"
+                    aria-pressed="false">
+                    Process PDFs into Drake
+                </button>                
+                <!-- Drake Client List (Parent Group) -->
+                <!-- <div class="module-nav-group" id="drakeClientGroup"> -->
+                    <button type="button"
+                            class="module-nav-button module-nav-parent"
+                            data-module="clientTaxReturnModule"
+                            aria-pressed="false">
+                        <span class="d-flex align-items-center">
+                            <span>Extract Final Tax Return</span>
+                            <!-- <span class="folder-icon-wrapper me-2">
+                                <i class="bi bi-folder-fill icon-closed"></i>
+                                <i class="bi bi-folder2-open icon-open"></i>
+                            </span> -->
+                        </span>
+                        <!-- <i class="bi bi-chevron-right nav-chevron" aria-hidden="true"></i> -->
+                    </button>
+
+                    <!-- Children -->
+                    <!-- <div class="module-nav-children" id="drakeClientChildren">
+                        <button type="button"
+                                class="module-nav-button module-nav-child"
+                                data-module="ocrTaxReturnModule"
+                                aria-pressed="false">
+                        OCR Tax Return
+                        </button>
+                    </div>
+                </div> -->
+
+                <button type="button" class="module-nav-button" data-module="karbonFileExtensionModule"
+                    aria-pressed="false">
+                    File Extension in Drake
+                </button>
+  
+                <button type="button" class="module-nav-button" data-module="DrakeEfileStatusModule"
+                    aria-pressed="false">
+                    Push Efile Status to Karbon
+                </button>
+                <button type="button" class="module-nav-button" data-module="DrakeFIKarbonModule"
+                    aria-pressed="false">
+                    Push Filing Instructions to Karbon
+                </button>
+            </nav>
+        </div>
+
+        <div class="main-content">
+            <div class="content-container">
+
+                <div id="introductionModule" class="module-section module">
+                    <div class="card shadow-sm border-0">
+                        <!-- Introduction -->
+                            <div class="client-table-header">
+                                <h3 class="mb-1 fw-bold">
+                                        Tax Automation portal for Badger CPA
+                                    </h3>
+
+                                    <p class="mb-0 small" style="opacity: 0.95;">
+                                        This Portal was built by Silver Sea Analytics and LPR to help Badger Tax team
+                                        streamline some of the tax processes starting 2026
+                                    </p>
+
+                                    <p class="mb-0 small" style="opacity: 0.95;">
+                                        User must be on Badger's network to execute the automation. Each module on the left navigation is an automation built for a specific
+                                        purpose. 
+                                        Some are built to run in the background, but we still provide a UI to
+                                        trigger automatically.
+                                    </p>
+
+                                    <p class="mb-0 small" style="opacity: 0.95;">
+                                        Note that all automations requiring interaction with Drake Tax will run on the automation machine rather
+                                        than the user's works station. 
+                                    </p>
+
+                                </div>
+                            </div>
+                        </div>
+
+
+                <!-- CLIENT TAX RETURN MODULE -->
+                <div id="clientTaxReturnModule" class="module-section">
+                    <div class="card shadow-sm border-0">
+                        <!-- Header with Gradient -->
+                        <div class="client-table-header">
+                            <h3 class="mb-1 fw-bold">
+                                Drake 2025 Tax Return list
+                            </h3>
+                            <p class="mb-0 small" style="opacity: 0.95;">
+                                Click the button below to have the Automation opens Drake, retrieve the client list, so you can select the Tax Return to run this automation.
+                            </p>
+
+                            <p>
+                            The system will login to Drake and print out the main tax return page, convert those PDF
+                            into text format and display on the UI.
+                            The preparers can copy/paste into their Excel workbook to validate that their Excel
+                            worksbook agrees to what is in Drake.
+                            </p>
+                        </div>
+
+                        <!-- Main Content -->
+                        <div class="client-controls">
+                            <div>
+                                <button id="queryDrakeBtn" class="btn btn-primary btn-lg"
+                                    style="padding: 10px 28px; font-weight: 500;">
+                                    <i class="bi bi-cloud-download me-2"></i>Query Drake
+                                </button>
+                            </div>
+                            <div class="client-search-wrapper">
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-white border-end-0">
+                                        <i class="bi bi-search text-muted"></i>
+                                    </span>
+                                    <input type="text" id="clientSearchInput" class="form-control border-start-0"
+                                        placeholder="Search by ID or Name..." style="border-left: 0;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status Info Line -->
+                        <div class="client-status-info">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Showing <span id="clientRecordCount" class="fw-bold">0</span> records
+                            <span id="clientFilterInfo" style="display: none;">
+                                | Filtered to <span id="clientFilteredCount">0</span> results
+                            </span>
+                            <span id="clientLoadTime"
+                                style="display: none; margin-left: 15px; color: #6c757d; font-size: 0.9em;">
+                                <i class="bi bi-clock me-1"></i><span></span>
+                            </span>
+                        </div>
+
+                        <!-- Table Wrapper -->
+                        <div class="client-table-wrapper">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle client-table mb-0">
+                                    <thead class="table-light">
+                                        <tr style="border-bottom: 2px solid #dee2e6;">
+                                            <th style="width: 10%; padding: 14px 16px; text-align: center;" class="fw-bold">Taxpayer ID</th>
+                                            <th style="width: 20%; padding: 14px 16px; text-align: left;" class="fw-bold">Taxpayer Name</th>
+                                            <th style="width: 15%; padding: 14px 16px; text-align: center;" class="fw-bold">Return Type</th>
+                                            <th style="width: 15%; padding: 14px 16px; text-align: center;" class="fw-bold">Status OCR</th>
+                                            <th style="width: 20%; padding: 14px 16px; text-align: center;" class="fw-bold">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="clientTableBody">
+                                        <tr class="empty-state">
+                                            <td colspan="7">
+                                                <div style="padding: 40px 20px; text-align: center; color: #6c757d;">
+                                                    <i class="bi bi-inbox"
+                                                        style="font-size: 2.5em; opacity: 0.5; display: block; margin-bottom: 12px;"></i>
+                                                    <div>Click <strong>"Query Drake"</strong> to load client data</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Pagination Footer -->
+                        <div class="client-pagination-wrapper">
+                            <div class="client-pagination-info" id="paginationInfo"></div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <nav aria-label="Client table pagination">
+                                    <ul class="pagination mb-0" id="clientTablePagination" style="margin: 0;">
+                                        <!-- Pagination items will be populated by JS -->
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DRAKE FILE EXTENSION  MODULE -->
+                <div id="karbonFileExtensionModule" class="module-section module-hidden">
+                    <div class="card shadow-sm border-0">
+                        <!-- Header with Gradient -->
+                        <div class="client-table-header">
+                            <h3 class="mb-1 fw-bold">
+                                File Extension in Drake 
+                            </h3>
+                            <p class="mb-0 small" style="opacity: 0.95;">
+                                Click the button below to have the Automation opens Drake, retrieve the client list, so you can select the Tax Return to run this automation.
+                            </p>
+
+                            <p>
+                            The system will login to Drake and try to file extension for the tax return.
+                            </p>
+                            <p>
+                                Pending update: the system will start with the list of Karbon Work Items with status "Extension" required, then let user select and run the extension.
+                            </p>
+                        </div>
+
+                        <!-- Main Content -->
+                        <div class="client-controls">
+                            <div>
+                                <button id="drakeFEQueryBtn" class="btn btn-primary btn-lg" 
+                                    style="padding: 10px 28px; font-weight: 500;">
+                                    <i class="bi bi-cloud-download me-2"></i>Query Karbon
+                                </button>
+                                <button id="drakeFEProcessBtn" class="btn btn-primary btn-lg ms-2"
+                                    style="padding: 10px 28px; font-weight: 500;" disabled>
+                                    <i class="bi bi-play-fill me-2"></i>File Extension
+                                </button>
+                            </div>
+                            <div class="client-search-wrapper">
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-white border-end-0">
+                                        <i class="bi bi-search text-muted"></i>
+                                    </span>
+                                    <input type="text" id="drakeFESearchInput" class="form-control border-start-0"
+                                        placeholder="Search by ID or Name..." style="border-left: 0;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Processing Result Panel (above table) -->
+                        <div id="drakeFEResult" class="alert alert-info" role="alert" hidden style="margin: 10px 20px;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fw-bold mb-1">
+                                        <i class="bi bi-activity me-1"></i>
+                                        Processing results
+                                    </div>
+                                    <div id="drakeFESummary" class="small"></div>
+                                </div>
+                                <button type="button" class="btn-close" aria-label="Close" id="drakeFECloseBtn"></button>
+                            </div>
+                            <hr class="my-2"/>
+                            <div id="drakeFEDetails" class="small" style="max-height: 220px; overflow:auto;"></div>
+                        </div>
+
+                        <!-- Status Info Line -->
+                        <div class="client-status-info">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Showing <span id="drakeFERecordCount" class="fw-bold">0</span> records
+                            <span id="drakeFEFilterInfo" style="display: none;">
+                                | Filtered to <span id="drakeFEFilteredCount">0</span> results
+                            </span>
+                            <span id="drakeFELoadTime"
+                                style="display: none; margin-left: 15px; color: #6c757d; font-size: 0.9em;">
+                                <i class="bi bi-clock me-1"></i><span></span>
+                            </span>
+                        </div>
+
+                        <!-- Table Wrapper -->
+                        <div class="client-table-wrapper">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle client-table mb-0">
+                                    <thead class="table-light">
+                                        <tr style="border-bottom: 2px solid #dee2e6;">
+                                            <th style="width: 5%; padding: 14px 16px; text-align: center;">
+                                                <input class="form-check-input" type="checkbox" id="drakeFESelectAll">
+                                            </th>
+                                            <th style="width: 5%; padding: 14px 16px; text-align: center;" class="fw-bold">Taxpayer ID</th>
+                                            <th style="width: 15%; padding: 14px 16px; text-align: center;" class="fw-bold">Taxpayer Name</th>
+                                            <th style="width: 10%; padding: 14px 16px; text-align: center;" class="fw-bold">Client Type</th>
+                                            <th style="width: 15%; padding: 14px 16px; text-align: center;" class="fw-bold">Assignee Name</th>
+                                            <th style="width: 15%; padding: 14px 16px; text-align: center;" class="fw-bold">Karbon Work Status</th>
+                                            <th style="width: 10%; padding: 14px 16px; text-align: center;" class="fw-bold">Karbon Work Item</th>
+                                            <th style="width: 10%; padding: 14px 16px; text-align: center;" class="fw-bold">File Extension Status</th>
+                                            <th style="width: 10%; padding: 14px 16px; text-align: center;" class="fw-bold">Last Updated</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="drakeFETableBody">
+                                        <tr class="empty-state">
+                                            <td colspan="9">
+                                                <div style="padding: 40px 20px; text-align: center; color: #6c757d;">
+                                                    <i class="bi bi-inbox"
+                                                        style="font-size: 2.5em; opacity: 0.5; display: block; margin-bottom: 12px;"></i>
+                                                    <div>Click <strong>"Query Karbon"</strong> to load client data</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Pagination Footer -->
+                        <div class="client-pagination-wrapper">
+                            <div class="client-pagination-info" id="drakeFEPaginationInfo"></div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <nav aria-label="Client table pagination">
+                                    <ul class="pagination mb-0" id="drakeFEPagination" style="margin: 0;">
+                                        <!-- Pagination items will be populated by JS -->
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAX AUTOMATION MODULE -->
+                <div id="taxAutomationModule" class="module-section">
+                    <div class="card shadow-sm border-0">
+                    <!-- Header with Gradient -->
+                    <div class="client-table-header">
+                        <h3 class="mb-1 fw-bold">
+                            Extract Tax Return Data
+                        </h3>
+                        <p class="mb-0 small" style="opacity: 0.95;">
+                            This function will let user search for a client from 2025 drake client list.
+                            The system will login to Drake and print out the main tax return page, convert those PDF
+                            into text format and display on the UI.
+                            The preparers can copy/paste into their Excel workbook to validate that their Excel
+                            worksbook agrees to what is in Drake.
+                        </p>
+                        <p class="mb-0 small" style="opacity: 0.95;">
+                            Currently supported forms: 1040, 1065, 1120, 1120S.
+                        </p>
+                        <p class="mb-0 small" style="opacity: 0.95;">
+                            Other function in development: The review should be done by AI instead of users doing
+                            copy/paste.
+                        </p>
+                    </div>
+                    <div class="card-body">
+                    <!-- Step Indicator -->
+                    <div class="card" style="margin-bottom: 20px;">
+                        <div class="step-indicator">
+                            <div class="step active" id="step1">
+                                <div class="step-circle">1</div>
+                                <div class="step-label">Select Form Type</div>
+                            </div>
+                            <div class="step" id="step2">
+                                <div class="step-circle">2</div>
+                                <div class="step-label">Upload Document</div>
+                            </div>
+                            <div class="step" id="step3">
+                                <div class="step-circle">3</div>
+                                <div class="step-label">Select Page Groups</div>
+                            </div>
+                            <div class="step" id="step4">
+                                <div class="step-circle">4</div>
+                                <div class="step-label">Process & View</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Info Display -->
+                    <div class="file-info hidden" id="fileInfo">
+                        <div class="file-info-icon">📄</div>
+                        <div class="file-info-content">
+                            <div class="file-info-label">Processing File:</div>
+                            <div class="file-info-name" id="fileName">No file selected</div>
+                        </div>
+                        <div class="file-info-status" id="fileStatus"></div>
+                    </div>
+
+                    <!-- Back Button -->
+                    <div class="back-button-container">
+                        <button class="btn-back hidden" id="backBtn" aria-label="Go back to previous step">
+                            <span class="btn-back-icon">←</span>
+                            <span class="btn-back-text">Back to Previous Step</span>
+                        </button>
+                    </div>
+
+                    <!-- Step 1: Select Form Type -->
+                    <div class="card step-content active" id="step1Content">
+                        <h2>Step 1: Select Tax Form Type</h2>
+                        <div class="form-group" id="formTypeSelectContainer">
+                            <label class="form-label">Form Type:</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="taxFormType" id="formType_1065"
+                                    value="1065">
+                                <label class="form-check-label" for="formType_1065">Form 1065-Partnership</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="taxFormType" id="formType_1120"
+                                    value="1120">
+                                <label class="form-check-label" for="formType_1120">Form 1120-Corporation</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="taxFormType" id="formType_1120s"
+                                    value="1120s">
+                                <label class="form-check-label" for="formType_1120s">Form 1120S-S Corporation</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="taxFormType" id="formType_1040"
+                                    value="1040">
+                                <label class="form-check-label" for="formType_1040">Form 1040-Individual</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Upload Document -->
+                    <div class="card step-content" id="step2Content">
+                        <h2>Step 2: Upload Document</h2>
+                        <div id="uploadPrompt" class="status-message status-info" style="margin-bottom: 15px;">
+                            Please select a form type in Step 1 first.
+                        </div>
+                        <div class="upload-area" id="uploadArea" style="opacity: 0.5; pointer-events: none;">
+                            <div class="upload-icon">📄</div>
+                            <div class="upload-text">Drag & drop your PDF file here</div>
+                            <div class="upload-hint">or click to browse</div>
+                            <input type="file" id="fileInput" accept=".pdf" style="display: none;">
+                        </div>
+                        <div id="uploadStatus" class="hidden" style="margin-top: 15px;"></div>
+                        <div id="pageCountInfo" class="status-message status-info hidden" style="margin-top: 15px;">
+                            Document has <strong id="pageCount">0</strong> pages (pages 1 to <strong
+                                id="maxPage">0</strong>)
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Select Page Groups -->
+                    <div class="card step-content" id="step3Content">
+                        <h2>Step 3: Enter Page Numbers for Each Group</h2>
+                        <p style="margin-bottom: 20px; color: #666;">Enter the page numbers for each group you want to
+                            process. Pages start from 1 (first page = 1).</p>
+                        <div id="pageGroupsList" style="display: flex; flex-direction: column; gap: 20px;">
+                            <!-- Page groups with input fields will be loaded here -->
+                        </div>
+                        <div style="margin-top: 20px;">
+                            <button class="btn btn-primary" id="processBtn" disabled>Process PDF to Text</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Results -->
+                    <div class="card step-content" id="step4Content">
+                        <h2>Step 4: Processing Results</h2>
+                        <div id="processingStatus" class="hidden" style="text-align: center; padding: 20px;">
+                            <div class="spinner"></div>
+                        </div>
+                        <div id="resultsView" class="hidden">
+                            <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+                                <!-- <button class="btn btn-save" id="saveChangesBtn" disabled>Save Changes</button> -->
+                                <button class="btn btn-primary" id="exportCsvBtn"><i class="bi bi-file-earmark-excel me-1"></i> Export Excel</button>
+                                <button class="btn btn-primary" id="downloadJsonBtn"><i class="bi bi-file-earmark-code me-1"></i> Download JSON</button>
+                            </div>
+                            <div id="accordionContainer"></div>
+                        </div>
+                    </div>
+                    </div>
+                    </div>
+
+                    <!-- Step 5: Push to Tax -->
+                    <!-- <div class="card step-content" id="step5Content">
+            <h2>Step 5: Push to Tax</h2>
+        </div> -->
+                </div>
+
+                <div id="ocrTaxReturnModule" class="module-section module-hidden">
+                    <div class="card shadow-sm border-0">
+                    <!-- Header with Gradient -->
+                    <div class="client-table-header">
+                        <h3 class="mb-1 fw-bold">
+                            Extract Tax Return Data
+                        </h3>
+                        <p class="mb-0 small" style="opacity: 0.95;">
+                            This function will let user search for a client from 2025 drake client list.
+                            The system will login to Drake and print out the main tax return page, convert those PDF
+                            into text format and display on the UI.
+                            The preparers can copy/paste into their Excel workbook to validate that their Excel
+                            worksbook agrees to what is in Drake.
+                        </p>
+                        <p class="mb-0 small" style="opacity: 0.95;">
+                            Currently supported forms: 1040, 1065, 1120, 1120S.
+                        </p>
+                        <p class="mb-0 small" style="opacity: 0.95;">
+                            Other function in development: The review should be done by AI instead of users doing
+                            copy/paste.
+                        </p>
+                    </div>
+
+                    <div class="mt-3">
+                        <button class="btn btn-back btn-sm" id="ocrReturnToClientListBtn"><i
+                                class="bi bi-arrow-left me-1"></i> Back to Client List</button>
+                    </div>
+                    
+                    <!-- Main Content Card -->
+                        <div class="card-body p-2">
+                            
+                            <!-- Job Status / File Info -->
+                            <div id="ocr_jobStatusPanel" class="alert alert-light border mb-4" style="display:none;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                                        <strong>File:</strong> <span id="ocr_fileName">No file selected</span>
+                                        <span id="ocr_pageCountBadge" class="badge bg-secondary ms-2" style="display:none;"></span>
+                                        <!-- Hidden elements for logic compatibility -->
+                                        <span id="ocr_pageCount" style="display:none;">0</span>
+                                        <span id="ocr_maxPage" style="display:none;">0</span>
+                                    </div>
+                                    <div id="ocr_statusText" class="text-muted small" style="display: none;">Waiting for job...</div>
+                                </div>
+                            </div>
+
+                            <!-- Page Configuration Section -->
+                            <div id="ocr_configSection" style="display: none;">
+                                <h5 class="card-title fw-bold mb-3 text-primary">Page Configuration</h5>
+                                <p class="text-muted small mb-3">Review detected page numbers below before processing.</p>
+                                
+                                <div id="ocr_pageGroupsList" class="d-flex flex-column gap-3 mb-4">
+                                    <!-- Page group inputs will be injected here -->
+                                    <div class="text-center text-muted py-4 bg-light rounded">
+                                        No active job. Please start from "Extract Drake Client List".
+                                    </div>
+                                </div>
+                                
+                                <button class="btn btn-primary" id="ocr_processBtn"  disabled>
+                                    <i class="bi bi-gear-fill me-2"></i>Process PDF to Text
+                                </button>
+                            </div>
+
+                            <!-- Results Section -->
+                            <div id="ocr_resultsSection" class="mt-3" style="display:none;">
+                                <div class="border-top mb-4"></div>
+                                <h2>Processing Results</h2>
+                                
+                                <div id="ocr_processingStatus" class="hidden text-center py-4">
+                                    <div class="spinner mb-2"></div>
+                                    <p class="mb-0 text-muted">Processing document...</p>
+                                </div>
+
+                                <div id="ocr_resultsView" class="hidden">
+                                    <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+                                        <button class="btn btn-primary" id="ocr_exportCsvBtn">
+                                            <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+                                        </button>
+                                        <button class="btn btn-primary" id="ocr_downloadJsonBtn">
+                                            <i class="bi bi-file-earmark-code me-1"></i> Download JSON
+                                        </button>
+                                    </div>
+                                    <div id="ocr_accordionContainer"></div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading Modal for Page Detection -->
+                <div id="detectionModal" class="modal-overlay hidden">
+                    <div class="modal-content">
+                        <div class="modal-spinner-container">
+                            <div class="spinner-large"></div>
+                        </div>
+                        <h3 class="modal-title" id="detectionTitle">Detecting Page Numbers</h3>
+                        <p class="modal-message" id="detectionMessage">
+                            Analyzing PDF document with OCR to automatically detect page numbers...
+                        </p>
+                        <p class="modal-submessage">
+                            This may take 10-30 seconds depending on document size.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Drake 2025 -->
+
+                <div id="DrakeAutomationModule" class="module-section module-hidden">
+                    <div class="card shadow-sm border-0">
+                    <!-- Header with Gradient -->
+                    <div class="client-table-header">
+                        <h3 class="mb-1 fw-bold">
+                            Analyze source PDFs and enter into Drake
+                        </h3>
+                        <p class="mb-0 small" style="opacity: 0.95;">
+                            This function will let user upload a standard document so the Bot can read into usable text
+                            format and automatically enter data into Drake Tax.
+                        </p>
+                        <p class="mb-0 small" style="opacity: 0.95;">
+                            Currently supported forms: W2, 1099INT, 1099DIV, 1099R, 1099SSA.
+                        </p>
+                        <p class="mb-0 small" style="opacity: 0.95;">
+                            Other development in progress: Ability to pull all PDFs from a specific SharePoint site.
+                            Ability to process combined PDF. </p>
+                    </div>
+                    <div class="card-body">
+                    <!-- Step Indicator -->
+                    <div class="card" style="margin-bottom: 20px;">
+                        <div class="step-indicator">
+                            <div class="step active" id="drakeStep1">
+                                <div class="step-circle">1</div>
+                                <div class="step-label">Upload Document</div>
+                            </div>
+                            <div class="step" id="drakeStep2">
+                                <div class="step-circle">2</div>
+                                <div class="step-label">Client ID & Form Type</div>
+                            </div>
+                            <div class="step" id="drakeStep3">
+                                <div class="step-circle">3</div>
+                                <div class="step-label">Extract & Review</div>
+                            </div>
+                            <div class="step" id="drakeStep4">
+                                <div class="step-circle">4</div>
+                                <div class="step-label">Push to Drake</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Back Button -->
+                    <div class="back-button-container">
+                        <button class="btn-back hidden" id="drakeBackBtn" aria-label="Go back to previous step">
+                            <span class="btn-back-icon">←</span>
+                            <span class="btn-back-text">Back to Previous Step</span>
+                        </button>
+                    </div>
+
+                    <!-- Step 1: Upload Document & Form Type -->
+                    <div class="card step-content active" id="drakeStep1Content">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h2>Step 1: Upload Document</h2>
+                            <div class="form-check form-switch drake-skip-switch"
+                                style="font-size: 1.2em; margin-top: 8px;">
+                                <input class="form-check-input" type="checkbox" id="drakeSkipPreviewCheckbox">
+                                <label class="form-check-label" for="drakeSkipPreviewCheckbox">
+                                    Skip Preview
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="upload-area" style="margin-top: 40px;" id="drakeUploadArea">
+                            <div class="upload-icon">📄</div>
+                            <div class="upload-text">Drag & drop your PDF file here</div>
+                            <div class="upload-hint">or click to browse</div>
+                            <input type="file" id="drakeFileInput" accept=".pdf" style="display: none;">
+                        </div>
+                        <div id="drakeUploadStatus" class="hidden" style="margin-top: 15px;"></div>
+
+                        <div style="text-align: right; margin-top: 20px;">
+                            <button class="btn btn-primary" id="drakeNextBtn" disabled>Next</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Client ID & Form Type -->
+                    <div class="card step-content" id="drakeStep2Content">
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h2>Step 2: Client ID & Form Type</h2>
+
+                        </div>
+                        
+                        <!-- <div id="drakePageGroupsList" style="margin-bottom: 20px; margin-top: 20px;">
+                        </div> -->
+
+                        <div class="drake-controls-wrapper">
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <div id="drakePageGroupsList" style="margin-bottom: 20px;">
+                                        <!-- Detected pages will be rendered here -->
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 hidden">
+                                    <div style="margin-bottom: 25px;">
+                                        <label class="form-label" for="drakeStep2FormSelect">Form Type to
+                                            Extract:</label>
+                                        <select id="drakeStep2FormSelect" class="form-control w-100"
+                                            style="text-align: center;">
+                                            <option value="">-- Select Form Type --</option>
+                                            <option value="Auto">-- Auto --</option>
+                                            <option value="1099DIV">Form 1099-DIV (Dividends and Distributions)</option>
+                                            <option value="1099INT">Form 1099-INT (Interest Income)</option>
+                                            <option value="1099R">Form 1099-R (Distributions From Pensions, etc.)
+                                            </option>
+                                            <option value="1099SSA">Form 1099-SSA (Social Security Benefit)</option>
+                                            <option value="W2">Form W-2 (Wage and Tax Statement)</option>
+                                        </select>
+                                    </div>
+                                    <button id="drakeDetectBtn" class="btn btn-secondary w-100"
+                                        style="margin-bottom: 0; width: 100%; margin-top: 15px;">Analyze / Detect
+                                        Pages</button>
+                                </div>
+                                <div class="col-md-6">
+                                    <div style="margin-bottom: 25px;">
+                                        <label class="form-label" for="drakeClientIdInput">Client ID:</label>
+                                        <select id="drakeClientIdInput" class="form-control w-100"
+                                            style="text-align: center;">
+                                            <option value="">-- Select Client --</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-primary w-100" id="drakeExtractBtn"
+                                        style="margin-bottom: 0; width: 100%; margin-top: 15px;" disabled>Extract
+                                        Data</button>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div id="drakeFilePreview" class="hidden" style="margin-top: 20px;">
+                            <h3>Document Preview</h3>
+                            <iframe id="drakePdfFrame"
+                                style="width: 100%; height: 800px; border: 1px solid #ddd; margin-bottom: 15px;"></iframe>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Extract & Review -->
+                    <div class="step-content" id="drakeStep3Content"
+                        style="background-color: #fff; border: 1px solid rgba(0,0,0,.125); border-radius: .25rem; padding: 1.25rem;">
+                        <h2>Step 3: Extract & Review</h2>
+                        <table id="drakeMainLayoutTable" style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <!-- Left Pane: PDF Viewer -->
+                                <td id="drakePdfPreviewPane"
+                                    style="width: 50%; vertical-align: top; padding-right: 10px;">
+                                    <h3>Document Preview</h3>
+                                    <iframe id="drakePdfReviewFrame"
+                                        style="width: 100%; height: 600px; border: 1px solid #ddd;"></iframe>
+                                </td>
+                                <!-- Right Pane: Controls and Results -->
+                                <td id="drakeResultsPane" style="width: 50%; vertical-align: top; padding-left: 10px;">
+                                    <h3>Extracted Data</h3>
+                                    <div id="drakeProcessingStatus" class="hidden"
+                                        style="text-align: center; padding: 20px;">
+                                        <div class="spinner"></div>
+                                        <p>Processing document...</p>
+                                    </div>
+                                    <div id="drakeResultsView" class="hidden">
+                                        <div id="drakeAccordionContainer"
+                                            style="border: 1px solid #ddd; padding: 10px; background: #f9f9f9;"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                        <!-- <div id="drakeLaunchContainer" style="margin-top: 20px; text-align: right;">
+                            <button class="btn btn-primary" id="launchDrakeBtn">Import to Drake</button>
+                        </div> -->
+                    </div>
+
+                    <!-- Step 4: Import Drake -->
+                    <div class="card step-content" id="drakeStep4Content">
+                        <h2>Step 4: Import to Drake</h2>
+                        <p style="margin-bottom: 20px;">Import the extracted data to Drake Software.</p>
+                        <div id="drakeImportStatus" class="hidden" style="margin-top: 15px;"></div>
+                    </div>
+                    </div>
+                    </div>
+                </div>
+
+                <!-- Filing Instructions Module -->
+                <div id="filingInstructionsModule" class="module-section module-hidden">
+                    <div class="card shadow-sm border-0">
+
+                        <!-- Header with Gradient -->
+                        <div class="client-table-header">
+                            <h3 class="mb-1 fw-bold">
+                                Extract Filing Instructions
+                            </h3>
+                            <p class="mb-0 small" style="opacity: 0.95;">
+                                This function is designed to run automatically every night. First it queries the list of
+                                Karbon Work Item under status "Return Assembly". For each item, the Bot open Drake Tax
+                                to print out the Filing instruction sheets, then upload to the corresponding Karbon.
+                            </p>
+                            <p class="mb-0 small" style="opacity: 0.95;">
+                                This UI is provided to test the function on individual client basis. </p>
+
+                        </div>
+                        <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label" for="fiFileInput">PDF file:</label>
+                            <input type="file" id="fiFileInput" class="form-control" accept=".pdf">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="fiSearchText">Bookmark contains:</label>
+                            <input type="text" id="fiSearchText" class="form-control" value="FI">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="fiMaxItems">Max pages to extract:</label>
+                            <input type="number" id="fiMaxItems" class="form-control" value="5" min="1">
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn btn-primary" id="fiProcessBtn" disabled>Process</button>
+                            <button class="btn btn-primary" id="fiDownloadBtn" disabled>Download Result</button>
+                        </div>
+                        <div id="fiStatus" class="status-message status-info hidden" style="margin-top: 15px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Drake Efile Status Module -->
+                <div id="DrakeEfileStatusModule" class="module-section module-hidden">
+                    <!-- <div class="card">
+                        <h2>Drake Efile Status to Karbon</h2>
+                        <p>This module is under construction.</p>
+                    </div> -->
+                    <div class="card shadow-sm border-0">
+                        <!-- Header with Gradient -->
+                        <div class="client-table-header">
+                            <h3 class="mb-1 fw-bold">
+                                Drake Efile Status to Karbon
+                            </h3>
+                            <p class="mb-0 small" style="opacity: 0.95;">
+                                The solution will query Karbon to retrieve a list of work items under forms 1040,
+                                1120-S, 1120, and 1065 with the status <strong>“Waiting for IRS/Agency”.</strong> For
+                                each work item, the system will open Drake, find the client by client ID, and check the
+                                electronic filing status of the corresponding tax return. </p>
+                            <p class="mb-0 small" style="opacity: 0.95;">
+                                If Drake shows <strong>“EF Accepted”</strong> or <strong>“EF Rejected”</strong>, the
+                                system will use that current Drake
+                                status to update the job item status in Karbon. Finally, the system will send an email
+                                notification to the user indicating whether the e-file status update succeeded or failed
+                            </p>
+                        </div>
+
+                        <!-- Main Content -->
+                        <div class="client-controls">
+                            <div>
+                                <button id="queryKarbonBtn" class="btn btn-primary btn-lg"
+                                    style="padding: 10px 28px; font-weight: 500;">
+                                    <i class="bi bi-cloud-download me-2"></i>Query Karbon
+                                </button>
+
+                                <button id="processKarbonBtn" class="btn btn-primary btn-lg"
+                                    style="padding: 10px 28px; font-weight: 500;" disabled>
+                                    <i class="bi bi-cloud-download me-2"></i>Get Efile Status From Drake
+                                </button>
+                            </div>
+                            <div class="client-search-wrapper">
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-white border-end-0">
+                                        <i class="bi bi-search text-muted"></i>
+                                    </span>
+                                    <input type="text" id="karbonSearchInput" class="form-control border-start-0"
+                                        placeholder="Search by ID or Name..." style="border-left: 0;">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Processing Result Panel (above table) -->
+                        <div id="karbonProcessResult" class="alert alert-info" role="alert" hidden style="margin-top:10px;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                            <div class="fw-bold mb-1">  
+                                <i class="bi bi-activity me-1"></i>
+                                Processing results
+                            </div>
+                            <div id="karbonProcessSummary" class="small"></div>
+                            </div>
+                            <button type="button" class="btn-close" aria-label="Close" id="karbonProcessCloseBtn"></button>
+                        </div>
+
+                        <hr class="my-2"/>
+                        <div id="karbonProcessDetails" class="small" style="max-height: 220px; overflow:auto;"></div>
+                        </div>
+
+
+                        <!-- Status Info Line -->
+                        <div class="client-status-info">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Showing <span id="karbonRecordCount" class="fw-bold">0</span> records
+                            <span id="karbonFilterInfo" style="display: none;">
+                                | Filtered to <span id="karbonFilteredCount">0</span> results
+                            </span>
+                            <span id="karbonLoadTime"
+                                style="display: none; margin-left: 15px; color: #6c757d; font-size: 0.9em;">
+                                <i class="bi bi-clock me-1"></i><span></span>
+                            </span>
+                        </div>
+
+
+                        <!-- Table Wrapper -->
+                        <div class="client-table-wrapper">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle client-table mb-0">
+                                    <thead class="table-light">
+                                        <tr style="border-bottom: 2px solid #dee2e6;">
+                                            <th style="width: 5%; padding: 14px 16px; text-align: center;" class="fw-bold">
+                                                <input class="form-check-input" type="checkbox" id="karbonSelectAll">
+                                            </th>
+                                            <th style="width: 5%; padding: 14px 16px; text-align: center;"
+                                                class="fw-bold" class="fw-bold">Tax ID</th>
+                                            <th style="width: 15%; padding: 14px 16px; text-align: center;"
+                                                class="fw-bold">Client Name</th>
+                                            <th style="width: 10%; padding: 14px 16px; text-align: center;"
+                                                class="fw-bold">Client Type</th>
+                                            <th style="width: 15%; padding: 14px 16px; text-align: center;"
+                                                class="fw-bold">Assignee Name
+                                            </th>
+                                            <th style="width: 15%; padding: 14px 16px; text-align: center;"
+                                                class="fw-bold">Karbon Work Status</th>
+                                            <th style="width: 10%; padding: 14px 16px; text-align: center;"
+                                                class="fw-bold">Karbon Work Item
+                                            </th>
+                                            <th style="width: 10%; padding: 14px 16px; text-align: center;"
+                                                class="fw-bold">Drake Efile Status
+                                            </th>
+                                            <th style="width: 10%; padding: 14px 16px; text-align: center;"
+                                                class="fw-bold">Last Updated
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="karbonTableBody">
+                                        <tr class="empty-state">
+                                            <td colspan="9">
+                                                <div style="padding: 40px 20px; text-align: center; color: #6c757d;">
+                                                    <i class="bi bi-inbox"
+                                                        style="font-size: 2.5em; opacity: 0.5; display: block; margin-bottom: 12px;"></i>
+                                                    <div>Click <strong>"Query Karbon"</strong> to load the item list
+                                                        from Karbon.</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Pagination Footer -->
+                        <div class="client-pagination-wrapper">
+                            <div class="client-pagination-info" id="karbonPaginationInfo"></div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <nav aria-label="Client table pagination">
+                                    <ul class="pagination mb-0" id="karbonTablePagination" style="margin: 0;">
+                                        <!-- Pagination items will be populated by JS -->
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Drake Filing Instructions to Karbon Module -->
+                <div id="DrakeFIKarbonModule" class="module-section module-hidden">
+                    <!-- <div class="card">
+                        <h2>Drake Efile Status to Karbon</h2>
+                        <p>This module is under construction.</p>
+                    </div> -->
+                    <div class="card shadow-sm border-0">
+                        <!-- Header with Gradient -->
+                        <div class="client-table-header">
+                            <h3 class="mb-1 fw-bold">
+                                Extract Filing Instructions
+                            </h3>
+                            <p class="mb-0 small" style="opacity: 0.95;">
+                                This function is designed to run automatically every night. First it queries the list of
+                                Karbon Work Item under status "Return Assembly". For each item, the Bot open Drake Tax
+                                to print out the Filing instruction sheets, then upload to the corresponding Karbon.
+                            </p>
+                            <p class="mb-0 small" style="opacity: 0.95;">
+                                This UI is provided to test the function on individual client basis. </p>
+
+                        </div>
+
+                        <!-- Main Content -->
+                        <div class="client-controls">
+                            <div>
+                                <button id="queryKarbonFIBtn" class="btn btn-primary btn-lg"
+                                    style="padding: 10px 28px; font-weight: 500;">
+                                    <i class="bi bi-cloud-download me-2"></i>Query Karbon
+                                </button>
+
+                                <button id="processKarbonFIBtn" class="btn btn-primary btn-lg"
+                                    style="padding: 10px 28px; font-weight: 500;" disabled>
+                                    <i class="bi bi-cloud-download me-2"></i>Get FI PDF File to Karbon
+                                </button>
+                            </div>
+                            <div class="client-search-wrapper">
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-white border-end-0">
+                                        <i class="bi bi-search text-muted"></i>
+                                    </span>
+                                    <input type="text" id="karbonFISearchInput" class="form-control border-start-0"
+                                        placeholder="Search by ID or Name..." style="border-left: 0;">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Processing Result Panel (above table) -->
+                        <div id="karbonFIProcessResult" class="alert alert-info" role="alert" hidden style="margin-top:10px;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                            <div class="fw-bold mb-1">  
+                                <i class="bi bi-activity me-1"></i>
+                                Processing results
+                            </div>
+                            <div id="karbonFIProcessSummary" class="small"></div>
+                            </div>
+                            <button type="button" class="btn-close" aria-label="Close" id="karbonFIProcessCloseBtn"></button>
+                        </div>
+
+                        <hr class="my-2"/>
+                        <div id="karbonFIProcessDetails" class="small" style="max-height: 220px; overflow:auto;"></div>
+                        </div>
+
+
+                        <!-- Status Info Line -->
+                        <div class="client-status-info">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Showing <span id="karbonFIRecordCount" class="fw-bold">0</span> records
+                            <span id="karbonFIFilterInfo" style="display: none;">
+                                | Filtered to <span id="karbonFIFilteredCount">0</span> results
+                            </span>
+                            <span id="karbonFILoadTime"
+                                style="display: none; margin-left: 15px; color: #6c757d; font-size: 0.9em;">
+                                <i class="bi bi-clock me-1"></i><span></span>
+                            </span>
+                        </div>
+
+
+                        <!-- Table Wrapper -->
+                        <div class="client-table-wrapper">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle client-table mb-0">
+                                    <thead class="table-light">
+                                        <tr style="border-bottom: 2px solid #dee2e6;">
+                                            <th style="width: 5%; padding: 14px 16px; text-align: center;" class="fw-bold">
+                                                <input class="form-check-input" type="checkbox" id="karbonFISelectAll">
+                                            </th>
+                                            <th style="width: 5%; padding: 14px 16px; text-align: center;"
+                                                class="fw-bold" class="fw-bold">Tax ID</th>
+                                            <th style="width: 15%; padding: 14px 16px; text-align: center;"
+                                                class="fw-bold">Client Name</th>
+                                            <th style="width: 10%; padding: 14px 16px; text-align: center;"
+                                                class="fw-bold">Client Type</th>
+                                            <th style="width: 10%; padding: 14px 16px; text-align: center;"
+                                                class="fw-bold">Assignee Name
+                                            </th>
+                                            <th style="width: 15%; padding: 14px 16px; text-align: center;"
+                                                class="fw-bold">Karbon Work Status</th>
+                                            <th style="width: 10%; padding: 14px 16px; text-align: center;"
+                                                class="fw-bold">Karbon Work Item</th>
+                                            <th style="width: 15%; padding: 14px 16px; text-align: center;"
+                                                class="fw-bold">Drake FI Status
+                                            </th>
+                                            <th style="width: 15%; padding: 14px 16px; text-align: center;"
+                                                class="fw-bold">Last Updated</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="karbonFITableBody">
+                                        <tr class="empty-state">
+                                            <td colspan="9">
+                                                <div style="padding: 40px 20px; text-align: center; color: #6c757d;">
+                                                    <i class="bi bi-inbox"
+                                                        style="font-size: 2.5em; opacity: 0.5; display: block; margin-bottom: 12px;"></i>
+                                                    <div>Click <strong>"Query Karbon"</strong> to load the item list
+                                                        from Karbon.</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Pagination Footer -->
+                        <div class="client-pagination-wrapper">
+                            <div class="client-pagination-info" id="karbonFIPaginationInfo"></div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <nav aria-label="Client table pagination">
+                                    <ul class="pagination mb-0" id="karbonFITablePagination" style="margin: 0;">
+                                        <!-- Pagination items will be populated by JS -->
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Modules -->
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+    <script src="/static/js/utils.js?v=20"></script>
+    <script src="/static/js/table.js?v=11"></script>
+    <script src="/static/js/accordion.js?v=13"></script>
+    <script src="/static/js/api.js?v=26"></script>
+    <script src="/static/js/ui.js?v=14"></script>
+    <script src="/static/js/app.js?v=15"></script>
+    <script src="/static/js/client_table.js?v=2"></script>
+    <script src="/static/js/drake_app.js?v=7"></script>
+    <script src="/static/js/drake_fe_module.js?v=1"></script>
+    <script src="/static/js/ocr_tax_return.js?v=1"></script>
+    <script src="/static/js/karbon_fi.js?v=1"></script>
+</body>
+
+</html>

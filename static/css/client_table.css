@@ -1,0 +1,335 @@
+/* ===================================================== */
+/* Client Tax Return Module - Updated UI (New Theme)     */
+/* ===================================================== */
+
+/* ---------- Header ---------- */
+.client-table-header {
+    background: linear-gradient(
+        135deg,
+        #1E3A5F 0%,
+        #243E63 100%
+    );
+    color: white;
+    padding: 20px 24px;
+    border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.client-table-header h3 {
+    font-size: 1.6em;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #ffffff;
+}
+
+.client-table-header h3 i {
+    color: #4ECDC4;
+}
+
+.client-table-header p {
+    font-size: 0.95em;
+    opacity: 0.95;
+    margin-bottom: 0;
+}
+
+/* ---------- Controls ---------- */
+.client-controls {
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.client-controls button {
+    padding: 10px 28px;
+    font-weight: 500;
+    font-size: 1em;
+}
+
+.client-search-wrapper {
+    flex: 1;
+    max-width: 350px;
+}
+
+.client-search-wrapper .input-group {
+    box-shadow: 0 2px 6px rgba(30, 58, 95, 0.15);
+}
+
+.client-search-wrapper .input-group-text {
+    border-right: 0;
+    background-color: #fff;
+}
+
+.client-search-wrapper .form-control {
+    border-left: 0;
+    border-radius: 0 0.375rem 0.375rem 0;
+}
+
+.client-search-wrapper .form-control:focus {
+    box-shadow: none;
+    border-color: #4ECDC4;
+}
+
+/* ---------- Status Info ---------- */
+.client-status-info {
+    padding: 12px 24px;
+    font-size: 0.9em;
+    color: #6c757d;
+    background-color: #f5f7fa;
+    border-bottom: 1px solid #e5e9f0;
+}
+
+/* ---------- Table ---------- */
+.client-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.client-table {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.client-table thead {
+    background-color: #f1f4f8;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.client-table thead th {
+    padding: 14px 16px;
+    font-weight: 600;
+    font-size: 0.95em;
+    color: #1E3A5F;
+    vertical-align: middle;
+}
+
+/* Row */
+.client-table tbody tr {
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.client-table tbody tr:hover {
+    background-color: #f2f8f7;
+}
+
+/* Cell */
+.client-table tbody td {
+    padding: 12px 16px;
+    font-size: 0.95em;
+    vertical-align: middle;
+}
+
+/* Taxpayer ID */
+.client-table tbody td:first-child {
+    font-weight: 600;
+    color: #1E3A5F;
+    text-align: center;
+}
+
+/* Taxpayer Name */
+.client-table tbody td:nth-child(2) {
+    font-weight: 500;
+    color: #243E63;
+}
+
+/* Return Type */
+.client-table tbody td:nth-child(3) {
+    text-align: center;
+}
+
+/* Extraction Status */
+.client-table tbody td:nth-child(4) {
+    text-align: center;
+}
+
+.status-extracted {
+    color: #198754; /* M(Success Green) */
+    font-weight: bold;
+}
+
+/* Action */
+.client-table tbody td:last-child {
+    text-align: center;
+}
+
+/* Empty */
+.client-table tbody tr.empty-state td {
+    padding: 40px 20px;
+    text-align: center;
+    color: #6c757d;
+}
+
+/* ---------- Pagination Wrapper ---------- */
+.client-pagination-wrapper {
+    background-color: #f1f4f8;
+    border-top: 1px solid #e5e9f0;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.client-pagination-info {
+    font-size: 0.9em;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* ---------- Pagination ---------- */
+.pagination {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 0;
+}
+
+.pagination li {
+    list-style: none !important;
+}
+
+.pagination .page-link {
+    border-radius: 0.4rem;
+    padding: 6px 12px;
+    font-size: 0.9em;
+    font-weight: 500;
+    color: #1E3A5F;
+    border: 1px solid #dbe1ea;
+    background-color: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.pagination .page-link:hover {
+    background-color: #1E3A5F;
+    color: #ffffff;
+    border-color: #1E3A5F;
+}
+
+/* Active */
+.pagination .page-item.active .page-link {
+    background-color: #1E3A5F;
+    color: #ffffff;
+    border-color: #1E3A5F;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(30, 58, 95, 0.35);
+}
+
+/* Disabled */
+.pagination .page-item.disabled .page-link {
+    color: #9aa4b2;
+    background-color: #f1f4f8;
+    border-color: #e1e6ef;
+    cursor: not-allowed;
+}
+
+/* ---------- Return Type Badge ---------- */
+.return-type-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.return-type-1040 {
+    background-color: #e6f4f3;
+    color: #0f766e;
+}
+
+.return-type-1065 {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.return-type-1120 {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.return-type-1120s {
+    background-color: #cfe2ff;
+    color: #084298;
+}
+
+.return-type-w2 {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
+
+.return-type-1099 {
+    background-color: #fdecea;
+    color: #842029;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+    .client-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .client-search-wrapper,
+    .client-controls button {
+        width: 100%;
+    }
+
+    .client-pagination-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* ===============================
+   Query Drake Button – Custom UI
+   =============================== */
+
+#queryDrakeBtn {
+    background-color: #1E3A5F;      /* navy */
+    border-color: #1E3A5F;
+    color: #ffffff;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    box-shadow: 0 4px 10px rgba(30, 58, 95, 0.25);
+    transition: all 0.2s ease;
+}
+
+/* Hover */
+#queryDrakeBtn:hover {
+    background-color: #243E63;      /* slightly lighter navy */
+    border-color: #243E63;
+    box-shadow: 0 6px 14px rgba(30, 58, 95, 0.35);
+    transform: translateY(-1px);
+}
+
+/* Active / Pressed */
+#queryDrakeBtn:active {
+    background-color: #1A3252;
+    border-color: #1A3252;
+    box-shadow: 0 2px 6px rgba(30, 58, 95, 0.25);
+    transform: translateY(0);
+}
+
+/* Focus (remove bootstrap glow) */
+#queryDrakeBtn:focus {
+    box-shadow: none;
+}
+
+/* Icon accent */
+#queryDrakeBtn i {
+    color: #4ECDC4;                 /* teal accent */
+}
+
+/* Style for the OCR button when it's processing */
+.ocr-extract-btn .spinner-border {
+    margin-left: 5px;
+}
+
+.ocr-extract-btn:disabled {
+    cursor: not-allowed;
+    opacity: 1;
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}

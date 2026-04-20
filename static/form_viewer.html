@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Data Viewer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        .container { max-width: 1400px; margin-top: 30px; margin-bottom: 50px; }
+        
+        /* Header Styling */
+        .form-header { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; border-left: 5px solid #0d6efd; }
+        .form-title { font-size: 1.5rem; font-weight: 700; color: #2c3e50; margin: 0; }
+        .form-meta { color: #6c757d; font-size: 0.9rem; margin-top: 5px; }
+        .badge-year { font-size: 1rem; background-color: #0d6efd; }
+        
+        /* Accordion Styling */
+        .accordion-item { border: none; margin-bottom: 10px; border-radius: 8px !important; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .accordion-button { font-weight: 600; color: #495057; background-color: #fff; }
+        .accordion-button:not(.collapsed) { color: #0d6efd; background-color: #f0f7ff; box-shadow: none; }
+        .accordion-button:focus { box-shadow: none; border-color: rgba(13,110,253,.25); }
+        
+        /* Table Styling */
+        .table-details { margin-bottom: 0; }
+        .table-details th { width: 40%; background-color: #f9fafb; font-weight: 600; color: #555; vertical-align: middle; padding: 10px 15px; border-bottom-width: 1px; }
+        .table-details td { vertical-align: middle; color: #212529; font-family: Consolas, Monaco, monospace; font-size: 0.95rem; padding: 16px 24px; }
+        
+        /* Sub-tables (for lists) */
+        .sub-table-container { margin-top: 15px; border: 1px solid #dee2e6; border-radius: 6px; overflow: hidden; margin-bottom: 15px; }
+        .sub-table-header { background-color: #e9ecef; padding: 8px 15px; font-weight: 600; font-size: 0.9rem; color: #495057; border-bottom: 1px solid #dee2e6; }
+        .table-list { margin-bottom: 0; }
+        .table-list th { background-color: #fff; font-size: 0.85rem; text-transform: uppercase; color: #6c757d; border-bottom: 2px solid #dee2e6; white-space: nowrap; padding: 12px 16px; }
+        .table-list td { font-family: Consolas, Monaco, monospace; font-size: 0.9rem; white-space: nowrap; padding: 12px 16px; }
+        
+        .empty-state { padding: 20px; text-align: center; color: #adb5bd; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="loading" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted">Loading form data...</p>
+        </div>
+        
+        <div id="error" class="alert alert-danger d-none"></div>
+
+        <div id="mainContent" class="d-none">
+            <!-- Header -->
+            <div class="form-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="form-title" id="displayFormType">Form Name</h1>
+                    <div class="form-meta">
+                        <span id="displayTS" class="me-3"><i class="bi bi-person-badge me-1"></i>TS: <span>-</span></span>
+                        <span id="displayJobId" class="text-muted small">ID: -</span>
+                    </div>
+                </div>
+                <div>
+                    <span class="badge badge-year rounded-pill" id="displayTaxYear">Year</span>
+                </div>
+            </div>
+
+            <!-- Accordion -->
+            <div class="accordion" id="dataAccordion">
+                <!-- Sections injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- Utilities ---
+
+        // Recursively unwrap { "value": ... } objects
+        function resolveValue(node) {
+            if (node === null || node === undefined) return "";
+            if (typeof node === 'object' && node !== null && 'value' in node) {
+                return resolveValue(node.value);
+            }
+            return node;
+        }
+
+        // Deep unwrap for an entire object/array structure
+        function deepUnwrap(data) {
+            if (data === null || data === undefined) return "";
+            
+            // If it has a 'value' key, unwrap it first
+            if (typeof data === 'object' && 'value' in data) {
+                return deepUnwrap(data.value);
+            }
+            
+            if (Array.isArray(data)) {
+                return data.map(item => deepUnwrap(item));
+            }
+            
+            if (typeof data === 'object') {
+                const result = {};
+                for (const key in data) {
+                    result[key] = deepUnwrap(data[key]);
+                }
+                return result;
+            }
+            
+            return data;
+        }
+
+        // --- Rendering Components ---
+
+        function createSectionCard(title, content) {
+            return `
+                <div class="card mb-4 shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom pt-3 pb-2">
+                        <h5 class="text-primary fw-bold mb-0"><i class="bi bi-person-lines-fill me-2"></i>${title}</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        ${content}
+                    </div>
+                </div>
+            `;
+        }
+
+        function createAccordionItem(id, title, contentHtml, expanded = false) {
+            const showClass = expanded ? 'show' : '';
+            const collapsedClass = expanded ? '' : 'collapsed';
+            
+            return `
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading${id}">
+                        <button class="accordion-button ${collapsedClass}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${id}" aria-expanded="${expanded}" aria-controls="collapse${id}">
+                            ${title}
+                        </button>
+                    </h2>
+                    <div id="collapse${id}" class="accordion-collapse collapse ${showClass}" aria-labelledby="heading${id}">
+                        <div class="accordion-body">
+                            ${contentHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderKeyValueTable(data) {
+            if (!data || Object.keys(data).length === 0) return '<div class="empty-state">No data available</div>';
+            
+            let rows = '';
+            for (const [key, val] of Object.entries(data)) {
+                // Skip empty values if desired
+                // if (val === "" || val === null) continue;
+                rows += `<tr><td class="bg-light fw-bold text-secondary" style="width: 40%;">${key}</td><td class="text-end">${val}</td></tr>`;
+            }
+            
+            return `
+                <div class="table-responsive">
+                    <table class="table table-bordered table-details">
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderDataTable(title, listData) {
+            if (!listData || listData.length === 0) return '';
+            
+            let html = '';
+            
+            listData.forEach((item, index) => {
+                let rows = '';
+                for (const [key, val] of Object.entries(item)) {
+                     rows += `
+                        <tr>
+                            <td class="bg-light fw-bold text-secondary" style="width: 40%; padding: 12px 24px;">${key}</td>
+                            <td class="text-end" style="padding: 12px 24px;">${val !== null && val !== undefined ? val : ''}</td>
+                        </tr>
+                    `;
+                }
+                
+                const itemHeader = listData.length > 1 
+                    ? `<div class="bg-light px-4 py-1 border-bottom"><small class="text-muted fw-bold text-uppercase">Item ${index + 1}</small></div>` 
+                    : '';
+
+                html += `
+                    <div class="mb-4 border rounded overflow-hidden">
+                        ${itemHeader}
+                        <table class="table table-bordered mb-0">
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                `;
+            });
+            
+            return `
+                <div class="sub-table-container">
+                    <div class="sub-table-header">${title}</div>
+                    <div class="p-4">
+                        ${html}
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Main Logic ---
+        
+        async function loadData() {
+            const params = new URLSearchParams(window.location.search);
+            const jobId = params.get('job_id');
+            
+            if (!jobId) {
+                document.getElementById('error').innerText = "No Job ID provided.";
+                document.getElementById('error').classList.remove('d-none');
+                document.getElementById('loading').classList.add('d-none');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/jobs/${jobId}/results`);
+                if (!response.ok) throw new Error("Failed to fetch results");
+                const json = await response.json();
+                
+                // Normalize structure: find 'fields'
+                let fields = json.fields;
+                if (!fields && Object.keys(json).length > 0) {
+                    // Try first key (e.g. "1099DIV")
+                    const firstKey = Object.keys(json)[0];
+                    if (json[firstKey] && json[firstKey].fields) {
+                        fields = json[firstKey].fields;
+                    }
+                }
+                if (!fields) throw new Error("Could not find 'fields' in JSON response.");
+
+                // Unwrap everything once
+                const data = deepUnwrap(fields);
+
+                // Render UI
+                document.getElementById('loading').classList.add('d-none');
+                document.getElementById('mainContent').classList.remove('d-none');
+
+                // 1. Header Info
+                // Hide original header
+                const headerDiv = document.querySelector('.form-header');
+                if (headerDiv) headerDiv.classList.add('d-none');
+
+                const headerData = {
+                    "Form Type": data.FormType,
+                    "Tax Year": data.TaxYear,
+                    "TS": data.TS || data.TSJ,
+                    "Job ID": jobId
+                };
+
+                const mainContent = document.getElementById('mainContent');
+                const accordion = document.getElementById('dataAccordion');
+                
+                // Insert Header Table
+                const headerHtml = `
+                    <div class="sub-table-container mb-4">
+                        <div class="sub-table-header">Form Information</div>
+                        ${renderKeyValueTable(headerData)}
+                    </div>`;
+                accordion.insertAdjacentHTML('beforebegin', headerHtml);
+
+                // Clear previous dynamic content (keeping header and accordion container)
+                // We will insert cards before the accordion
+
+                // 2. Payer / Employer Section
+                const payerData = data.Payer || data.Employer;
+                if (payerData) {
+                    const title = data.Employer ? "Employer Information" : "Payer Information";
+                    accordion.insertAdjacentHTML('beforebegin', createSectionCard(title, renderKeyValueTable(payerData)));
+                }
+
+                // 3. Recipient / Employee Section
+                const recipientData = data.Recipient || data.Employee || data.Beneficiary;
+                if (recipientData) {
+                    let title = "Recipient Information";
+                    if (data.Employee) title = "Employee Information";
+                    if (data.Beneficiary) title = "Beneficiary Information";
+                    accordion.insertAdjacentHTML('beforebegin', createSectionCard(title, renderKeyValueTable(recipientData)));
+                }
+
+                // 4. Entries Section
+                const entries = data.Entries;
+                if (entries) {
+                    let entriesHtml = '';
+                    
+                    // Separate scalar values (boxes) from lists (tables)
+                    const scalarData = {};
+                    const listData = {};
+                    
+                    for (const [key, val] of Object.entries(entries)) {
+                        if (Array.isArray(val)) {
+                            // Check if array contains objects or primitives
+                            const isPrimitiveArray = val.length > 0 && val.every(item => typeof item !== 'object' || item === null);
+                            
+                            if (isPrimitiveArray) {
+                                scalarData[key] = val.filter(v => v !== null && v !== undefined).join(', ');
+                            } else {
+                                listData[key] = val;
+                            }
+                        } else {
+                            scalarData[key] = val;
+                        }
+                    }
+                    
+                    // Render Scalars first
+                    if (Object.keys(scalarData).length > 0) {
+                        // Sort keys naturally
+                        const sortedScalar = {};
+                        Object.keys(scalarData).sort(new Intl.Collator(undefined, {numeric:true, sensitivity:'base'}).compare).forEach(key => {
+                            sortedScalar[key] = scalarData[key];
+                        });
+                        
+                        entriesHtml += `
+                            <div class="sub-table-container">
+                                <div class="sub-table-header">General Boxes</div>
+                                ${renderKeyValueTable(sortedScalar)}
+                            </div>`;
+                    }
+                    
+                    // Render Lists (Tables)
+                    for (const [key, list] of Object.entries(listData)) {
+                        entriesHtml += renderDataTable(key, list);
+                    }
+                    
+                    if (!entriesHtml) entriesHtml = '<div class="empty-state">No entries found</div>';
+                    
+                    accordion.innerHTML = createAccordionItem('Entries', 'Financial Entries & Boxes', entriesHtml, true);
+                } else {
+                    // Fallback if no Entries key but other fields exist?
+                    // Usually normalized data has Entries.
+                }
+
+                // 5. Other top-level fields?
+                // Sometimes there are other fields not in Payer/Recipient/Entries.
+                // We can collect them if needed, but usually the normalized structure covers these 3.
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loading').classList.add('d-none');
+                document.getElementById('error').innerText = "Error loading data: " + err.message;
+                document.getElementById('error').classList.remove('d-none');
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+/**
+ * Drake Efile Status badge styles
+ * Reusable color-coded badges for automation status display
+ * DB Status -> UI class mapping
+ */
+
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    color: white;
+    display: inline-block;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+/* Primary status classes (per spec) */
+.status-notchecked {
+    background: #6b7280;
+}
+
+.status-inqueue {
+    background: #9ca3af;
+}
+
+.status-processing {
+    background: #f97316;
+}
+
+.status-success {
+    background: #22c55e;
+}
+
+.status-error,
+.status-fail {
+    background: #ef4444;
+}
+
+.status-clientnotfound {
+    background: #eab308;
+}
+
+.status-missingtax {
+    background: #6b7280;
+}
+
+/* Legacy aliases for backward compatibility */
+.status-gray { background-color: #6c757d; }
+.status-blue { background-color: #0d6efd; }
+.status-orange { background-color: #fd7e14; }
+.status-yellow { background-color: #ffc107; color: #1f2937; }
+.status-green { background-color: #198754; }
+.status-red { background-color: #dc3545; }
